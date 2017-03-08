@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.MediaRecorder;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
@@ -14,9 +15,21 @@ import android.util.Log;
  * Created by niyamat on 3/7/17.
  */
 
-class RecordService extends Service {
-    private MediaRecorder mediaRecorder;
+public class RecordService extends Service {
     private boolean onForeground = false;
+    private RecorderHandler handler;
+
+    @Override
+    public void onCreate() {
+        RecorderThread recorderThread = new RecorderThread();
+        recorderThread.setName("RecordThread");
+        recorderThread.start();
+
+        while (recorderThread.mHandler == null) {
+
+        }
+        handler = recorderThread.mHandler;
+    }
 
     @Nullable
     @Override
@@ -27,19 +40,23 @@ class RecordService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startService();
-        startRecording();
+
+        Message message = Message.obtain();
+        message.arg1 = 2;
+        handler.sendMessage(message);
         return Service.START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        mediaRecorder.stop();
-        mediaRecorder.release();
+        Message message = Message.obtain();
+        message.arg1 = 1;
+        handler.sendMessage(message);
         stopForeground(true);
         onForeground = false;
     }
 
-    private void startRecording() {
+   /* private void startRecording() {
         Log.d(Constant.TAG, "RecordService startRecording");
         mediaRecorder = new MediaRecorder();
 
@@ -57,7 +74,7 @@ class RecordService extends Service {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     private void startService() {
         if (!onForeground) {
