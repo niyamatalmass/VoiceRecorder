@@ -16,15 +16,15 @@ public class RecorderHandler extends Handler {
 
     @Override
     public void handleMessage(Message msg) {
-        if (msg.arg1 == 2) {
-            startRecording();
-        } else if (msg.arg1 == 1) {
+        if (msg.arg1 == RecordService.MESSEGE_START_RECORDING) {
+            startRecording(msg.obj.toString());
+        } else if (msg.arg1 == RecordService.MESSEGE_STOP_RECORDING) {
             mediaRecorder.stop();
             mediaRecorder.release();
         }
     }
 
-    private void startRecording() {
+    private void startRecording(String phoneNumber) {
         Log.d(Constant.TAG, "RecordService startRecording");
         mediaRecorder = new MediaRecorder();
 
@@ -32,8 +32,7 @@ public class RecorderHandler extends Handler {
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mediaRecorder.setOutputFile(FileHelper.getFilename(String.valueOf(4556)));
-
+            mediaRecorder.setOutputFile(FileHelper.getFilename(phoneNumber));
 
             mediaRecorder.prepare();
 

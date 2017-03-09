@@ -15,7 +15,9 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
 
-    Intent recordIntent;
+    public static final String EXTRA_DIALED_NUMBER = "EXTRA_DIALED_NUMBER";
+    private Intent recordIntent;
+    private String enteredPhoneNumber;
     private boolean isSpeakerOn;
     private Button callButton;
     private EditText phoneNumberEditText;
@@ -42,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         callButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String enteredPhoneNumber = String.valueOf(phoneNumberEditText.getText());
+                enteredPhoneNumber = String.valueOf(phoneNumberEditText.getText());
                 if (enteredPhoneNumber != null) {
                     showRecordingDialogue(enteredPhoneNumber);
                 }
@@ -59,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         recordIntent = new Intent(MainActivity.this, RecordService.class);
+                        if (enteredPhoneNumber != null) {
+                            recordIntent.putExtra(EXTRA_DIALED_NUMBER, enteredPhoneNumber);
+                        }
                         startService(recordIntent);
                         makeCall(enteredPhoneNumber);
                     }

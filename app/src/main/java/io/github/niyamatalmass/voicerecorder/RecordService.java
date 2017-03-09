@@ -15,6 +15,8 @@ import android.util.Log;
  */
 
 public class RecordService extends Service {
+    public static final int MESSEGE_STOP_RECORDING = 1;
+    public static final int MESSEGE_START_RECORDING = 2;
     private static final int REQUEST_CODE_NOTIFICATION_PENDING_INTENT = 99;
     private boolean onForeground = false;
     private RecorderHandler handler;
@@ -38,16 +40,22 @@ public class RecordService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        String enteredNumber = null;
         startService();
-
-
+        if (intent.getStringExtra(MainActivity.EXTRA_DIALED_NUMBER) != null) {
+            enteredNumber = intent.getStringExtra(MainActivity.EXTRA_DIALED_NUMBER);
+        }
         Message message = Message.obtain();
         if (null != intent.getAction() && intent.getAction().equals("STOP")) {
-            message.arg1 = 1;
+            message.arg1 = MESSEGE_STOP_RECORDING;
             stopForeground(true);
             onForeground = false;
         } else {
-            message.arg1 = 2;
+            message.arg1 = MESSEGE_START_RECORDING;
+            if (enteredNumber != null) {
+                message.obj = enteredNumber;
+            }
+
         }
         handler.sendMessage(message);
         return Service.START_NOT_STICKY;
@@ -56,7 +64,7 @@ public class RecordService extends Service {
     @Override
     public void onDestroy() {
         Message message = Message.obtain();
-        message.arg1 = 1;
+        message.arg1 = MESSEGE_STOP_RECORDING;
         handler.sendMessage(message);
         stopForeground(true);
         onForeground = false;
