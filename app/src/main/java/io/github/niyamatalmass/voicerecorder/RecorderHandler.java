@@ -13,9 +13,9 @@ import android.util.Log;
 public class RecorderHandler extends Handler {
     private MediaRecorder mediaRecorder;
 
+
     @Override
     public void handleMessage(Message msg) {
-
         if (msg.arg1 == 2) {
             startRecording();
         } else if (msg.arg1 == 1) {

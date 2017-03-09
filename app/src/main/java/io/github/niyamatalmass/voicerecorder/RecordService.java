@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.media.MediaRecorder;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
@@ -16,6 +15,7 @@ import android.util.Log;
  */
 
 public class RecordService extends Service {
+    private static final int REQUEST_CODE_NOTIFICATION_PENDING_INTENT = 99;
     private boolean onForeground = false;
     private RecorderHandler handler;
 
@@ -26,7 +26,6 @@ public class RecordService extends Service {
         recorderThread.start();
 
         while (recorderThread.mHandler == null) {
-
         }
         handler = recorderThread.mHandler;
     }
@@ -41,8 +40,15 @@ public class RecordService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         startService();
 
+
         Message message = Message.obtain();
-        message.arg1 = 2;
+        if (null != intent.getAction() && intent.getAction().equals("STOP")) {
+            message.arg1 = 1;
+            stopForeground(true);
+            onForeground = false;
+        } else {
+            message.arg1 = 2;
+        }
         handler.sendMessage(message);
         return Service.START_NOT_STICKY;
     }
@@ -56,26 +62,6 @@ public class RecordService extends Service {
         onForeground = false;
     }
 
-   /* private void startRecording() {
-        Log.d(Constant.TAG, "RecordService startRecording");
-        mediaRecorder = new MediaRecorder();
-
-        try {
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mediaRecorder.setOutputFile(FileHelper.getFilename(String.valueOf(4556)));
-
-            mediaRecorder.prepare();
-
-            Thread.sleep(2000);
-            mediaRecorder.start();
-            Log.d(Constant.TAG, "RecordService recordStarted");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-
     private void startService() {
         if (!onForeground) {
             Log.d(Constant.TAG, "RecordService startService");
@@ -86,6 +72,12 @@ public class RecordService extends Service {
             PendingIntent pendingIntent = PendingIntent.getActivity(
                     getBaseContext(), 0, intent, 0);
 
+
+            //Adding Action to notifications
+            Intent actionIntent = new Intent(this, RecordService.class);
+            actionIntent.setAction("STOP");
+            PendingIntent pendingActionIntent = PendingIntent.getService(this, REQUEST_CODE_NOTIFICATION_PENDING_INTENT, actionIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
             Notification notification = new NotificationCompat.Builder(
                     getBaseContext())
                     .setContentTitle(
@@ -93,6 +85,7 @@ public class RecordService extends Service {
                     .setTicker(this.getString(R.string.notification_ticker))
                     .setContentText(this.getString(R.string.notification_text))
                     .setSmallIcon(R.mipmap.ic_launcher)
+                    .addAction(R.mipmap.ic_launcher_round, "STOP RECORDING", pendingActionIntent)
                     .setContentIntent(pendingIntent).setOngoing(true)
                     .build();
 
