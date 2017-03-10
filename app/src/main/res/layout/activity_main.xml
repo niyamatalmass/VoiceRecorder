@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootElement"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="io.github.niyamatalmass.voicerecorder.MainActivity">
@@ -43,14 +44,6 @@
         android:layout_below="@+id/playButton"
         android:layout_marginTop="11dp"
         android:text="UPLOAD" />
-
-    <SeekBar
-        android:id="@+id/seekBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/uploadButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="113dp" />
 
 
 </RelativeLayout>

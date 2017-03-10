@@ -24,7 +24,7 @@ public class RecorderHandler extends Handler {
         }
     }
 
-    private void startRecording(String phoneNumber) {
+    private void startRecording(String audioPath) {
         Log.d(Constant.TAG, "RecordService startRecording");
         mediaRecorder = new MediaRecorder();
 
@@ -32,7 +32,7 @@ public class RecorderHandler extends Handler {
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mediaRecorder.setOutputFile(FileHelper.getFilename(phoneNumber));
+            mediaRecorder.setOutputFile(audioPath);
 
             mediaRecorder.prepare();
 

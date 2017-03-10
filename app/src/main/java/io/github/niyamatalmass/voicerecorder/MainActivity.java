@@ -4,19 +4,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-
-import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,6 +24,9 @@ public class MainActivity extends AppCompatActivity {
     private Button callButton, playButton, uploadButton;
     private EditText phoneNumberEditText;
     private SeekBar seekBar;
+    private String audioPath;
+    private boolean recorded = false;
+    private RelativeLayout rootElement;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,24 +37,19 @@ public class MainActivity extends AppCompatActivity {
         callButton = (Button) findViewById(R.id.callButton);
         playButton = (Button) findViewById(R.id.playButton);
         uploadButton = (Button) findViewById(R.id.uploadButton);
-        seekBar = (SeekBar) findViewById(R.id.seekBar);
-        seekBar.setVisibility(View.GONE);
+        rootElement = (RelativeLayout) findViewById(R.id.rootElement);
 
-        playButton.setActivated(false);
-        uploadButton.setActivated(false);
-
-        if (getIntent().getAction() != null) {
+        /*if (getIntent().getAction() != null) {
             String intent = getIntent().getAction();
             if (intent.equals("STOP")) {
+                recorded = true;
                 if (recordIntent == null) {
                     stopService(getIntent());
                 } else {
                     stopService(recordIntent);
                 }
-                playButton.setActivated(true);
-                uploadButton.setActivated(true);
             }
-        }
+        }*/
 
 
         callButton.setOnClickListener(new View.OnClickListener() {
@@ -67,29 +62,41 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (playButton.isActivated()) {
-            playButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String recordedAudioUrl;
-                    try {
-                        if (enteredPhoneNumber != null) {
-                            recordedAudioUrl = FileHelper.getFilename(enteredPhoneNumber);
-                            seekBar.setVisibility(View.VISIBLE);
-                            PlayRecordedAudio playRecordedAudio = new PlayRecordedAudio();
-                            playRecordedAudio.setSeekBar(seekBar);
-                            playRecordedAudio.execute(recordedAudioUrl);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
+                if (audioPath != null) {
+                    Uri intentUri = Uri.parse("file://" + audioPath);
 
+                    Intent intent = new Intent();
+                    intent.setAction(Intent.ACTION_VIEW);
+                    intent.setDataAndType(intentUri, "audio/3gpp");
+                    startActivity(intent);
+                } else {
+                    Snackbar.make(rootElement, "You haven't record anything", Snackbar.LENGTH_SHORT).show();
                 }
-            });
+            }
+        });
+
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (getIntent().getAction() != null) {
+            String intent = getIntent().getAction();
+            if (intent.equals("STOP")) {
+                recorded = true;
+                if (recordIntent == null) {
+                    stopService(getIntent());
+                } else {
+                    stopService(recordIntent);
+                }
+            }
         }
-
-
     }
 
     private void showRecordingDialogue(final String enteredPhoneNumber) {
@@ -101,7 +108,12 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         recordIntent = new Intent(MainActivity.this, RecordService.class);
                         if (enteredPhoneNumber != null) {
-                            recordIntent.putExtra(EXTRA_DIALED_NUMBER, enteredPhoneNumber);
+                            try {
+                                audioPath = FileHelper.getFilename(enteredPhoneNumber);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            recordIntent.putExtra(EXTRA_DIALED_NUMBER, audioPath);
                         }
                         startService(recordIntent);
                         makeCall(enteredPhoneNumber);
@@ -117,13 +129,14 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressWarnings("MissingPermission")
     private void makeCall(String enteredPhoneNumber) {
-        final Handler handler = new Handler();
+        // TODO: 3/9/17 uncomment this
+        /*final Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 changeSpeaker(true);
             }
-        }, 500);
+        }, 500);*/
 
 
         Intent callIntent = new Intent(Intent.ACTION_CALL);
@@ -136,67 +149,6 @@ public class MainActivity extends AppCompatActivity {
         audioManager.setMode(AudioManager.MODE_IN_CALL);
         audioManager.setSpeakerphoneOn(b);
         isSpeakerOn = audioManager.isSpeakerphoneOn();
-    }
-
-    public class PlayRecordedAudio extends AsyncTask<String, Integer, Void> implements SeekBar.OnSeekBarChangeListener{
-
-        MediaPlayer mediaPlayer = new MediaPlayer();
-        SeekBar seekBar;
-
-        public void setSeekBar(SeekBar seekBar) {
-            this.seekBar = seekBar;
-        }
-
-        @Override
-        protected Void doInBackground(String... params) {
-            try {
-                mediaPlayer.setDataSource(params[0]);
-                mediaPlayer.prepare();
-                mediaPlayer.start();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        seekBar.setMax(mediaPlayer.getDuration());
-                        seekBar.setOnSeekBarChangeListener(PlayRecordedAudio.this);
-                    }
-                });
-
-                while (mediaPlayer.isPlaying()) {
-                    publishProgress(mediaPlayer.getCurrentPosition());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            seekBar.setProgress(values[0]);
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            mediaPlayer.stop();
-            mediaPlayer.release();
-        }
-
-        @Override
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            mediaPlayer.seekTo(progress / 1000);
-        }
-
-        @Override
-        public void onStartTrackingTouch(SeekBar seekBar) {
-
-        }
-
-        @Override
-        public void onStopTrackingTouch(SeekBar seekBar) {
-
-        }
     }
 
 }

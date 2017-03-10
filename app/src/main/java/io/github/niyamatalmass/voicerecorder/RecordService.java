@@ -40,10 +40,10 @@ public class RecordService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String enteredNumber = null;
+        String audioPath = null;
         startService();
         if (intent.getStringExtra(MainActivity.EXTRA_DIALED_NUMBER) != null) {
-            enteredNumber = intent.getStringExtra(MainActivity.EXTRA_DIALED_NUMBER);
+            audioPath = intent.getStringExtra(MainActivity.EXTRA_DIALED_NUMBER);
         }
         Message message = Message.obtain();
         if (null != intent.getAction() && intent.getAction().equals("STOP")) {
@@ -52,8 +52,8 @@ public class RecordService extends Service {
             onForeground = false;
         } else {
             message.arg1 = MESSEGE_START_RECORDING;
-            if (enteredNumber != null) {
-                message.obj = enteredNumber;
+            if (audioPath != null) {
+                message.obj = audioPath;
             }
 
         }
