@@ -6,14 +6,20 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.SystemClock;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private String audioPath;
     private boolean recorded = false;
     private RelativeLayout rootElement;
+    private Button stopButton;
+    private Chronometer chronometer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,19 +45,11 @@ public class MainActivity extends AppCompatActivity {
         callButton = (Button) findViewById(R.id.callButton);
         playButton = (Button) findViewById(R.id.playButton);
         uploadButton = (Button) findViewById(R.id.uploadButton);
+        stopButton = (Button) findViewById(R.id.stopButton);
+        chronometer = (Chronometer) findViewById(R.id.chronometerView);
         rootElement = (RelativeLayout) findViewById(R.id.rootElement);
 
-        /*if (getIntent().getAction() != null) {
-            String intent = getIntent().getAction();
-            if (intent.equals("STOP")) {
-                recorded = true;
-                if (recordIntent == null) {
-                    stopService(getIntent());
-                } else {
-                    stopService(recordIntent);
-                }
-            }
-        }*/
+        stopButton.setVisibility(View.GONE);
 
 
         callButton.setOnClickListener(new View.OnClickListener() {
@@ -76,6 +76,20 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Snackbar.make(rootElement, "You haven't record anything", Snackbar.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (recordIntent == null) {
+                    stopService(getIntent());
+                } else {
+                    stopService(recordIntent);
+                }
+
+                chronometer.stop();
+                stopButton.setVisibility(View.GONE);
             }
         });
 
@@ -116,6 +130,9 @@ public class MainActivity extends AppCompatActivity {
                             recordIntent.putExtra(EXTRA_DIALED_NUMBER, audioPath);
                         }
                         startService(recordIntent);
+
+                        initializeStopwatch();
+
                         makeCall(enteredPhoneNumber);
                     }
                 }).setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -125,6 +142,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
         builder.create().show();
+    }
+
+    private void initializeStopwatch() {
+        stopButton.setVisibility(View.VISIBLE);
+
+        chronometer.setBase(SystemClock.elapsedRealtime());
+        chronometer.start();
     }
 
     @SuppressWarnings("MissingPermission")

@@ -6,44 +6,80 @@
     android:layout_height="match_parent"
     tools:context="io.github.niyamatalmass.voicerecorder.MainActivity">
 
+
     <EditText
         android:id="@+id/phoneEditTextView"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:inputType="phone"
         android:hint="Enter phone number to call"
-        android:layout_toLeftOf="@+id/callButton"
-        android:layout_toStartOf="@+id/callButton" />
+        android:inputType="phone"
+        android:layout_marginEnd="5dp"
+        android:layout_marginRight="5dp"
+
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        />
+
+    <!--android:layout_toLeftOf="@id/callButton"-->
+    <!--android:layout_toStartOf="@id/callButton"-->
+
+        <!--android:layout_alignBottom="@id/callButton"-->
+
 
     <Button
         android:id="@+id/callButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="CALL"
-        android:layout_alignBottom="@+id/phoneEditTextView"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:text="CALL"
+
+        android:layout_alignTop="@id/phoneEditTextView"
+        android:layout_toRightOf="@id/phoneEditTextView"
+        android:layout_toEndOf="@id/phoneEditTextView"
+        />
+
+
+    <Chronometer
+        android:id="@+id/chronometerView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginTop="80dp"
+        android:textSize="40sp" />
 
     <Button
-        android:id="@+id/playButton"
+        android:id="@+id/stopButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/phoneEditTextView"
-        android:layout_marginTop="31dp"
-        android:text="PLAY" />
+        android:layout_below="@+id/chronometerView"
+        android:text="STOP RECORDING"/>
 
-    <Button
-        android:id="@+id/uploadButton"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/playButton"
-        android:layout_marginTop="11dp"
-        android:text="UPLOAD" />
+        android:orientation="horizontal"
+        android:layout_below="@id/stopButton"
+        android:layout_marginTop="5dp">
+
+        <Button
+            android:id="@+id/playButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="PLAY" />
+
+        <Button
+            android:id="@+id/uploadButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="UPLOAD" />
+    </LinearLayout>
 
 
 </RelativeLayout>
