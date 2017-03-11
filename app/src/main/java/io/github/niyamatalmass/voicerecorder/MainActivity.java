@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.SystemClock;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -18,7 +16,6 @@ import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-import android.widget.TextView;
 
 
 public class MainActivity extends AppCompatActivity {
