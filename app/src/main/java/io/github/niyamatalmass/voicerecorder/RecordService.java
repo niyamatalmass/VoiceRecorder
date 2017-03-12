@@ -81,19 +81,13 @@ public class RecordService extends Service {
                     getBaseContext(), 0, intent, 0);
 
 
-            //Adding Action to notifications
-            Intent actionIntent = new Intent(this, RecordService.class);
-            actionIntent.setAction("STOP");
-            PendingIntent pendingActionIntent = PendingIntent.getService(this, REQUEST_CODE_NOTIFICATION_PENDING_INTENT, actionIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
             Notification notification = new NotificationCompat.Builder(
                     getBaseContext())
                     .setContentTitle(
                             this.getString(R.string.notification_title))
                     .setTicker(this.getString(R.string.notification_ticker))
                     .setContentText(this.getString(R.string.notification_text))
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .addAction(R.mipmap.ic_launcher_round, "STOP RECORDING", pendingActionIntent)
+                    .setSmallIcon(R.drawable.ic_stat_fiber_manual_record)
                     .setContentIntent(pendingIntent).setOngoing(true)
                     .build();
 

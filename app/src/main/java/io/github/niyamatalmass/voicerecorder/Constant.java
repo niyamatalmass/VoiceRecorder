@@ -1,5 +1,6 @@
 package io.github.niyamatalmass.voicerecorder;
 
+
 /**
  * Created by niyamat on 3/7/17.
  */
@@ -22,5 +23,9 @@ public class Constant {
     public static final int STATE_STOP_RECORDING = 5;
     public static final int RECORDING_ENABLED = 6;
     public static final int RECORDING_DISABLED = 7;
+
+
+    public static final String APP_KEY = "uv3j3qejg8yve4p";
+    public static final String APP_SECRET = "jri4b41l5gzdr02";
 
 }

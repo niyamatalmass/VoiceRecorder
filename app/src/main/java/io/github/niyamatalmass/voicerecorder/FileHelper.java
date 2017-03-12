@@ -18,9 +18,8 @@ public class FileHelper {
      * @return
      * @throws Exception
      */
-    public static String getFilename(String phoneNumber) throws Exception {
+    public static String getFileLocation(String phoneNumber) throws Exception {
         String filepath = null;
-        String myDate = null;
         File file = null;
         if (phoneNumber == null)
             throw new Exception("Phone number can't be empty");
@@ -32,21 +31,23 @@ public class FileHelper {
             if (!file.exists()) {
                 file.mkdirs();
             }
-
-            myDate = (String) DateFormat.format("yyyyMMddkkmmss", new Date());
-
-            // Clean characters in file name
-            phoneNumber = phoneNumber.replaceAll("[\\*\\+-]", "");
-            if (phoneNumber.length() > 10) {
-                phoneNumber.substring(phoneNumber.length() - 10,
-                        phoneNumber.length());
-            }
         } catch (Exception e) {
             Log.e(Constant.TAG, "Exception " + phoneNumber);
             e.printStackTrace();
         }
 
-        return (file.getAbsolutePath() + "/d" + myDate + "p" + phoneNumber + ".3gp");
+        return (file.getAbsolutePath() + getFileName(phoneNumber));
+    }
+
+    public static String getFileName(String phoneNumber) {
+        String date = (String) DateFormat.format("yyyyMMddkkmmss", new Date());
+        phoneNumber = phoneNumber.replaceAll("[\\*\\+-]", "");
+        if (phoneNumber.length() > 10) {
+            phoneNumber.substring(phoneNumber.length() - 10,
+                    phoneNumber.length());
+        }
+
+        return ("/d" + date + "p" + phoneNumber + ".3gp");
     }
 
     public static String getFilePath() {
