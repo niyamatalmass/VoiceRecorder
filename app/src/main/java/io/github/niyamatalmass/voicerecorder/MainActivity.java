@@ -1,22 +1,25 @@
 package io.github.niyamatalmass.voicerecorder;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Chronometer;
@@ -46,6 +49,8 @@ import java.io.InputStream;
 public class MainActivity extends AppCompatActivity {
 
     public static final String EXTRA_DIALED_NUMBER = "EXTRA_DIALED_NUMBER";
+    private static final int REQUEST_PERMISSION_CALL_PHONE_AND_RECORD_AUDIO = 201;
+    private static final int REQUEST_PERMISSION_ONLY_CALL = 202;
     private DbxClientV2 dbxClientV2;
     private Intent recordIntent;
     private String enteredPhoneNumber;
@@ -59,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private Button linkCopyButton;
     private Chronometer chronometer;
     private String fileName;
-
+    private String mEnteredPhoneNumber;
 
 
     @Override
@@ -67,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //define all the view
         phoneNumberEditText = (EditText) findViewById(R.id.phoneEditTextView);
         callButton = (Button) findViewById(R.id.callButton);
         playButton = (Button) findViewById(R.id.playButton);
@@ -77,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
         audioShareAbleLinkTextView = (TextView) findViewById(R.id.audioLinkTextView);
         linkCopyButton = (Button) findViewById(R.id.copyButton);
 
+        // set this three view's visibility to gone
         stopButton.setVisibility(View.GONE);
         audioShareAbleLinkTextView.setVisibility(View.GONE);
         linkCopyButton.setVisibility(View.GONE);
@@ -88,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
                 enteredPhoneNumber = String.valueOf(phoneNumberEditText.getText());
                 if (enteredPhoneNumber != null) {
                     showRecordingDialogue(enteredPhoneNumber);
+                } else {
+                    Snackbar.make(rootElement, "Please enter a phone number first!", Snackbar.LENGTH_SHORT);
                 }
             }
         });
@@ -127,8 +136,15 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (OAuthUtil.get(OAuthUtil.ACCESS_TOKEN) != null) {
                     uploadRecordedAudio();
+                } else if (audioPath == null) {
+                    Snackbar.make(rootElement, "Can't find the file", Snackbar.LENGTH_SHORT).show();
                 } else {
-                    Snackbar.make(rootElement, "You are not singed in! Please sign in!", Snackbar.LENGTH_SHORT);
+                    Snackbar.make(rootElement, "You are not singed in! Sign in and try again!", Snackbar.LENGTH_LONG).setAction("SIGN IN", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Auth.startOAuth2Authentication(MainActivity.this, Constant.APP_KEY);
+                        }
+                    }).show();
                 }
             }
         });
@@ -150,35 +166,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_PERMISSION_CALL_PHONE_AND_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                makeCallAndStartRecording(mEnteredPhoneNumber);
+            }
+        } else if (requestCode == REQUEST_PERMISSION_ONLY_CALL) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                makeCall(mEnteredPhoneNumber);
+            }
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
         if (Auth.getOAuth2Token() != null) {
             OAuthUtil.set(OAuthUtil.ACCESS_TOKEN, Auth.getOAuth2Token());
+            Snackbar.make(rootElement, "You are signed in!", Snackbar.LENGTH_SHORT).show();
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_sign_in) {
-            Auth.startOAuth2Authentication(this, Constant.APP_KEY);
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private void showRecordingDialogue(final String enteredPhoneNumber) {
@@ -188,34 +195,101 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Yes!", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        recordIntent = new Intent(MainActivity.this, RecordService.class);
-                        if (enteredPhoneNumber != null) {
-                            try {
-                                audioPath = FileHelper.getFileLocation(enteredPhoneNumber);
-                            } catch (Exception e) {
-                                e.printStackTrace();
+
+                        if (isExternalStorageAvailable()) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                if (checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED
+                                        && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                                        && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                                    mEnteredPhoneNumber = enteredPhoneNumber;
+                                    requestPermission(new String[]{Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_PERMISSION_CALL_PHONE_AND_RECORD_AUDIO, "Call and Record Audio");
+                                } else {
+                                    makeCallAndStartRecording(enteredPhoneNumber);
+                                }
+                            } else {
+                                makeCallAndStartRecording(enteredPhoneNumber);
                             }
-                            recordIntent.putExtra(EXTRA_DIALED_NUMBER, audioPath);
+                        } else {
+                            Snackbar.make(rootElement, "Sorry! External storage not available", Snackbar.LENGTH_SHORT).show();
                         }
-                        fileName = FileHelper.getFileName(enteredPhoneNumber);
-                        startService(recordIntent);
 
-                        initializeStopwatch();
 
-                        makeCall(enteredPhoneNumber);
+                    }
+
+                    private boolean isExternalStorageAvailable() {
+                        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                 }).setNegativeButton("No", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        makeCall(enteredPhoneNumber);
+                        // we just make a call
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            if (checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                                mEnteredPhoneNumber = enteredPhoneNumber;
+                                requestPermission(new String[]{Manifest.permission.CALL_PHONE}, REQUEST_PERMISSION_ONLY_CALL, "Call");
+                            } else {
+                                makeCall(enteredPhoneNumber);
+                            }
+                        } else {
+                            makeCall(enteredPhoneNumber);
+                        }
                     }
                 });
         builder.create().show();
     }
 
+    private void makeCallAndStartRecording(String enteredPhoneNumber) {
+        recordIntent = new Intent(MainActivity.this, RecordService.class);
+        try {
+            // audioPath where record will be saved
+            audioPath = FileHelper.getFileLocation(enteredPhoneNumber);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        recordIntent.putExtra(EXTRA_DIALED_NUMBER, audioPath);
+        fileName = FileHelper.getFileName(enteredPhoneNumber);
+        startService(recordIntent);
+
+        // initializing the stopwatch to count the time
+        initializeStopwatch();
+
+        // finally make call to the number
+        makeCall(enteredPhoneNumber);
+    }
+
+    @SuppressLint("NewApi")
+    public void requestPermission(final String[] permissionsName, final int requestCode, String displayPermissionName) {
+        if (shouldShowRequestPermissionRationale(Manifest.permission.CALL_PHONE)) {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(displayPermissionName + " Permission")
+                    .setMessage("Hi there! We can't " + displayPermissionName + " anyone without " + displayPermissionName + " permission, could you please accept the " + displayPermissionName + " permission")
+                    .setPositiveButton("Yep", new DialogInterface.OnClickListener() {
+                        @SuppressLint("NewApi")
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            requestPermissions(permissionsName, requestCode);
+                        }
+                    }).setNegativeButton("No thanks", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Snackbar.make(rootElement, ":(", Snackbar.LENGTH_SHORT).show();
+                }
+            }).show();
+        } else {
+            requestPermissions(permissionsName, requestCode);
+        }
+
+    }
+
     private void initializeStopwatch() {
+        // stop button' visibility set to GONE in onCreate but we set this VISIBLE in here. so that user can see the stop button
         stopButton.setVisibility(View.VISIBLE);
 
+        // we use chronometer for making this stopwatch
         chronometer.setBase(SystemClock.elapsedRealtime());
         chronometer.start();
     }
@@ -231,11 +305,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }, 500);*/
 
-
         Intent callIntent = new Intent(Intent.ACTION_CALL);
         callIntent.setData(Uri.parse("tel:" + enteredPhoneNumber.trim()));
         startActivity(callIntent);
     }
+
     private void changeSpeaker(boolean b) {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         audioManager.setMode(AudioManager.MODE_IN_CALL);
