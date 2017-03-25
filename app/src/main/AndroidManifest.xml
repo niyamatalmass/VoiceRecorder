@@ -33,7 +33,7 @@
             android:launchMode="singleTask">
 
             <intent-filter>
-                <data android:scheme="db-uv3j3qejg8yve4p" />
+                <data android:scheme="db-egd5xa5gv5rnnco" />
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -42,8 +42,8 @@
 
         </activity>
 
-        <service android:name=".RecordService" />
-
+        <service
+            android:name=".RecordService"/>
 
     </application>
 

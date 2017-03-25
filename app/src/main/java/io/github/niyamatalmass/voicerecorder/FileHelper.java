@@ -18,21 +18,19 @@ public class FileHelper {
      * @return
      * @throws Exception
      */
-    public static String getFileLocation(String phoneNumber) throws Exception {
+    public static String getFileLocation(String phoneNumber) {
         String filepath = null;
         File file = null;
-        if (phoneNumber == null)
-            throw new Exception("Phone number can't be empty");
         try {
             filepath = getFilePath();
 
-            file = new File(filepath, Constant.FILE_DIRECTORY);
+            file = new File(filepath, Constants.FILE_DIRECTORY);
 
             if (!file.exists()) {
                 file.mkdirs();
             }
         } catch (Exception e) {
-            Log.e(Constant.TAG, "Exception " + phoneNumber);
+            Log.e(Constants.TAG, "Exception " + phoneNumber);
             e.printStackTrace();
         }
 
